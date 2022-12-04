@@ -11,6 +11,7 @@ BUILD_DIR := build
 # ============================================================
 .PHONY: qemu_run
 .PHONY: make_target_list
+.PHONY: all floppy_image kernel bootloader clean always
 
 
 # ============================================================
@@ -25,17 +26,39 @@ make_target_list:
 # ============================================================
 # Build the main image os the OS
 # ============================================================
-$(BUILD_DIR)/main_floppy.img: $(BUILD_DIR)/main.bin
-	cp $^ $@
-	truncate -s 1440k $@
-
+floppy_image: $(BUILD_DIR)/main_floppy.img
+$(BUILD_DIR)/main_floppy.img: bootloader kernel
+	dd if=/dev/zero of=$(BUILD_DIR)/main_floppy.img bs=512 count=2880
+	newfs_msdos -F 12 -f 1440 $(BUILD_DIR)/main_floppy.img
+	dd if=$(BUILD_DIR)/bootloader.bin of=$(BUILD_DIR)/main_floppy.img conv=notrunc
+	mcopy -i $(BUILD_DIR)/main_floppy.img $(BUILD_DIR)/kernel.bin "::kernel.bin"
+	# note, missing fat headers added via the bootloader
 
 # ============================================================
-# Assembly the binary file for the kernel
+# Bootloader
 # ============================================================
-$(BUILD_DIR)/main.bin: $(SRC_DIR)/main.asm
-	$(ASM) $^ -f bin -o $@
+bootloader: $(BUILD_DIR)/bootloader.bin
+$(BUILD_DIR)/bootloader.bin: always
+	$(ASM) $(SRC_DIR)/bootloader/boot.asm -f bin -o $(BUILD_DIR)/bootloader.bin
 
+# ============================================================
+# Kernel 
+# ============================================================
+kernel: $(BUILD_DIR)/kernel.bin
+$(BUILD_DIR)/kernel.bin: always
+	$(ASM) $(SRC_DIR)/kernel/main.asm -f bin -o $(BUILD_DIR)/kernel.bin
+
+# ============================================================
+# Always
+# ============================================================
+always:
+	mkdir -p $(BUILD_DIR)
+
+# ============================================================
+# Clean
+# ============================================================
+clean:
+	rm -rf $(BUILD_DIR)/*
 
 # ============================================================
 # Start the operating system using qemu 

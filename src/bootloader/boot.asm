@@ -4,6 +4,15 @@
 org 0x7c00				; beginning of the OS code (calculate all memory offsets based on address 7c00)
 bits 16					; tell the assembler that it should emit 16 bit code (NOT 16 bit mode)
 
+;======================
+; bpb fat 12 header
+;======================
+jmp short start				; EB 3C 90		(just has to be there, i think so it knows where the start of the bootloader code is?)
+nop
+bpb_oem: 		            db "MSWIN4.1	; 8 bytes
+bpb_bytes_per_sec: 	        dw 512	;
+bpb_sectors_per_cluster:    db 1		;
+
 
 ;======================
 ; code
@@ -24,7 +33,7 @@ puts:
 	or al, al			; set zf if we encounter the NULL(0x0) byte
 	jz .done			; we've found the null byte
 
-	mov ah, 0x0e			; enter teletype mode
+	mov ah, 0x0e		; enter teletype mode
 	mov bh, 0x0			; set page number
 	mov al, al			; al has the byte to display
 	int 10h				; invoke system interrupt (print char to screen)
@@ -66,7 +75,7 @@ main:
 msg_hello: db 'Hello World!', 0dh, 0ah, 0
 
 ;======================
-; program padding
+; program padding (BIOS expects 55aa at the end of the first 512 bytes)
 ;======================
-times 510-($-$$) db 0 	; fill up rest of program with 0s
+times 510-($-$$) db 0 	; fill up to the last two bytes with 0s
 dw 0aa55h				; magic constant for bios
