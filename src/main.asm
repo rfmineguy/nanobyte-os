@@ -19,12 +19,12 @@ start:
 puts:
 	push si				; save used registers
 	push ax				;
-.loop:
+.loop:					; loop over each byte starting at si
 	lodsb				; load byte at ds:si into eax
-	or al, al			; set zf
+	or al, al			; set zf if we encounter the NULL(0x0) byte
 	jz .done			; we've found the null byte
 
-	mov ah, 0x0e		; enter teletype mode
+	mov ah, 0x0e			; enter teletype mode
 	mov bh, 0x0			; set page number
 	mov al, al			; al has the byte to display
 	int 10h				; invoke system interrupt (print char to screen)
@@ -35,9 +35,11 @@ puts:
 	pop si				; restore used registers
 	ret
 ; =============================
-	
-	
-main:					; entry point
+
+; =============================
+; entry point
+; =============================
+main:
 	;======================
 	; setup data segments
 	;======================
