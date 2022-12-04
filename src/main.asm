@@ -34,7 +34,6 @@ puts:
 	pop ax				; restore used registers
 	pop si				; restore used registers
 	ret
-; =============================
 
 ; =============================
 ; entry point

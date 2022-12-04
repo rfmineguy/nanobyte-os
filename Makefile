@@ -1,6 +1,6 @@
-#
+# ============================================================
 # Variables
-#
+# ============================================================
 ASM := nasm
 SRC_DIR := src
 BUILD_DIR := build
@@ -10,11 +10,16 @@ BUILD_DIR := build
 # Phony target declarations
 # ============================================================
 .PHONY: qemu_run
+.PHONY: make_target_list
+
 
 # ============================================================
 # Display a list of make targets
 # ============================================================
 make_target_list:
+	@echo "Make target list"
+	@echo "================"
+	@echo " + qemu_run         : Starts up qemu with the latest kernel image"
 
 
 # ============================================================
