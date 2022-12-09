@@ -43,3 +43,5 @@ mov bx, arr        ;copy offset to ax
 mov si, 2 * 2      ;index 2 ;array[2]
 
 mov ax, [bx + si]  ;copy contents from bx + si to ax 
+
+
