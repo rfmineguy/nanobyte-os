@@ -13,7 +13,7 @@ nop
 bpb_oem: 		            db 'MSWIN4.1'	; OEM identifier, 8 bytes
 bpb_bytes_per_sec: 	        dw 512	        ; Number of bytes per sector (2 bytes)
 bpb_sectors_per_cluster:    db 1		    ;
-bpb_reserved_sectors:       db 1
+bpb_reserved_sectors:       dw 1
 bpb_fat_count:              db 2
 bpb_dir_entries_count:      dw 0e0h			; 
 bpb_total_sectors:			dw 2880			; 2880 * 512 = 1.44MB
