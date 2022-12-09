@@ -4,7 +4,18 @@
 ASM := nasm
 SRC_DIR := src
 BUILD_DIR := build
+BOCHS_CONFIG := bochs_config
 
+# ============================================================
+# System Dependency Code
+# ============================================================
+UNAME_S := $(shell uname -s)
+CREATE_FS :=
+ifeq ($(UNAME_S), Linux)
+	CREATE_FS += mkfs.fat -F 12 -n "NBOS" $(BUILD_DIR)/main_floppy.img
+else ifeq ($(UNAME_S), Darwin)
+	CREATE_FS += newfs_msdos -F 12 -f 1440 $(BUILD_DIR)/main_floppy.img
+endif
 
 # ============================================================
 # Phony target declarations
@@ -30,7 +41,8 @@ make_target_list:
 floppy_image: $(BUILD_DIR)/main_floppy.img
 $(BUILD_DIR)/main_floppy.img: bootloader kernel
 	dd if=/dev/zero of=$(BUILD_DIR)/main_floppy.img bs=512 count=2880
-	newfs_msdos -F 12 -f 1440 $(BUILD_DIR)/main_floppy.img
+	#newfs_msdos -F 12 -f 1440 $(BUILD_DIR)/main_floppy.img
+	$(CREATE_FS)
 	dd if=$(BUILD_DIR)/bootloader.bin of=$(BUILD_DIR)/main_floppy.img conv=notrunc
 	mcopy -v -i $(BUILD_DIR)/main_floppy.img $(BUILD_DIR)/kernel.bin "::kernel.bin"
 
@@ -68,3 +80,6 @@ qemu_run:
 
 docker_run:
 	docker run --rm -it -w /root/workspace/ -v ~/Documents/dev/operation-systems/nanobyte-os:/root/workspace ubuntu bash
+
+bochs_debug:
+	bochs -f $(BOCHS_CONFIG) -q
