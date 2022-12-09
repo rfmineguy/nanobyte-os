@@ -18,6 +18,7 @@ start:
 puts:
 	push si				; save used registers
 	push ax				;
+    push bx
 .loop:					; loop over each byte starting at si
 	lodsb				; load byte at ds:si into eax
 	or al, al			; set zf if we encounter the NULL(0x0) byte
@@ -30,6 +31,7 @@ puts:
 	
 	jmp .loop			; continue looping over the "string"
 .done:
+    pop bx
 	pop ax				; restore used registers
 	pop si				; restore used registers
 	ret

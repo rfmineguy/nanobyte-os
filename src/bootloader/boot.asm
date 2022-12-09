@@ -9,7 +9,8 @@ bits 16					; tell the assembler that it should emit 16 bit code (NOT 16 bit mod
 ;======================
 jmp short start								; EB 3C 90		(just has to be there, i think so it knows where the start of the bootloader code is?)
 nop
-bpb_oem: 		            db "MSWIN4.1"	; OEM identifier, 8 bytes
+
+bpb_oem: 		            db 'MSWIN4.1'	; OEM identifier, 8 bytes
 bpb_bytes_per_sec: 	        dw 512	        ; Number of bytes per sector (2 bytes)
 bpb_sectors_per_cluster:    db 1		    ;
 bpb_reserved_sectors:       db 1
@@ -26,9 +27,9 @@ bpb_large_sector_count: 	dd 0
 ebr_drive_number:			db 0			; 0x0 = floppy, 0x80 = hdd
 							db 0			; reserved byte
 ebr_signature:				db 29h			; either 28h or 29h
-ebr_volume_id:				db "SERI"		; volume id (serial number, 4 bytes)
-ebr_volume_label: 			db "RFOS       "; 11 byte label padded with spaces
-ebr_system_id:				db "FAT32   "   ; 8 byte system id (always FAT32)
+ebr_volume_id:				db 'SERI'		; volume id (serial number, 4 bytes)
+ebr_volume_label: 			db 'RFOS       '; 11 byte label padded with spaces
+ebr_system_id:				db 'FAT12   '   ; 8 byte system id (always FAT12)
 ebr_boot_code:
 
 ;======================
@@ -45,6 +46,7 @@ start:
 puts:
 	push si				; save used registers
 	push ax				;
+    push bx
 .loop:					; loop over each byte starting at si
 	lodsb				; load byte at ds:si into eax
 	or al, al			; set zf if we encounter the NULL(0x0) byte
@@ -52,11 +54,12 @@ puts:
 
 	mov ah, 0x0e		; enter teletype mode
 	mov bh, 0x0			; set page number
-	mov al, al			; al has the byte to display
+	; mov al, al		; al has the byte to display
 	int 10h				; invoke system interrupt (print char to screen)
 	
 	jmp .loop			; continue looping over the "string"
 .done:
+    pop bx
 	pop ax				; restore used registers
 	pop si				; restore used registers
 	ret
