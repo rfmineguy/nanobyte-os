@@ -81,5 +81,10 @@ qemu_run:
 docker_run:
 	docker run --rm -it -w /root/workspace/ -v ~/Documents/dev/operation-systems/nanobyte-os:/root/workspace ubuntu bash
 
+
 bochs_debug:
+ifeq ($(UNAME_S), Linux)
 	bochs -f $(BOCHS_CONFIG) -q
+else
+	@echo "'bochs_debug' target only available for linux based systems"
+endif
