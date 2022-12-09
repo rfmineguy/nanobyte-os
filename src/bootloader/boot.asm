@@ -90,8 +90,14 @@ main:
 	mov bx, 0x7E00					; Store data after boot sector
 	call disk_read
 	
+	;======================
+	; test printing hello world
+	;======================
 	mov si, msg_hello
 	call puts
+;======================
+; end main
+;======================
 
 ;=============================
 ; When there is a floppy error this is called
@@ -111,7 +117,8 @@ wait_key_and_reboot:
 	
 .halt:					; backup infinite loop
 	cli					; disable interupts
-	jmp .halt			;   just in case hlt doesn't actually halt
+    hlt
+	;jmp .halt			;   just in case hlt doesn't actually halt
 
 ;======================
 ; Disk functions below
@@ -128,6 +135,8 @@ wait_key_and_reboot:
 ;	- dh 			  : head
 ;======================
 lba_to_chs:
+    push ax
+    push dx
 										;Calculate Sector #
 	xor dx, dx							;  dx = 0
 	div word [bpb_sectors_per_track]	;  ax = LBA / SectorsPerTrack
@@ -171,12 +180,13 @@ disk_read:
 
 	call lba_to_chs						; convert LBA to CHS
 	pop ax								; al = # of sectors to read (was in cl)
+
 	mov ah, 02h
 	mov di, 3							; retry read count
 .retry:
 	pusha								; save registers
 	stc									; set carry flag intentionally
-	int 13h								; interupt 13h	(if the carry flag is set there was an error)
+	int 13h								; interupt 13h	(if the carry flag is still set there was an error)
 	jnc .done
 	
 	; error reading
@@ -219,7 +229,7 @@ disk_reset:
 ; program data
 ;======================
 msg_hello: db 'Hello World!', 0dh, 0ah, 0
-msg_read_fail: db 'Read failed!', 0dh, 0ah, 0
+msg_read_fail: db 'Read from disk failed!', 0dh, 0ah, 0
 
 ;======================
 ; program padding (BIOS expects 55aa at the end of the first 512 bytes)
