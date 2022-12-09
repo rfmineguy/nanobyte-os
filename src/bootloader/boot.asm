@@ -81,18 +81,145 @@ main:
 	mov ss, ax
 	mov sp, 0x7C00
 	
+	;======================
+	; read from floppy disk
+	;======================
+	mov [ebr_drive_number], dl
+	mov ax, 1						; Second sector (LBA=1)
+	mov cl, 1						; Read one sector
+	mov bx, 0x7E00					; Store data after boot sector
+	call disk_read
+	
 	mov si, msg_hello
 	call puts
 
-	hlt					; halt the processor
+;=============================
+; When there is a floppy error this is called
+;=============================
+floppy_error:			; used for when attempts to read fail
+	mov si, msg_read_fail
+	call puts
+	jmp wait_key_and_reboot
+	
+;=============================
+; This is called when we wanted to reboot the OS but wait for user input first
+;=============================
+wait_key_and_reboot:
+	mov ah, 0			; wait for user keypress
+	int 16h				; kernel call
+	jmp 0FFFFh:0		; jump up to the start of BIOS (effectively rebooting)
 	
 .halt:					; backup infinite loop
+	cli					; disable interupts
 	jmp .halt			;   just in case hlt doesn't actually halt
+
+;======================
+; Disk functions below
+;======================
+
+;======================
+; Description:
+;   - LBA to CHS (Conversion function, more in DiskLayout.md)
+; Params:
+;	- ax			  : LBA Address
+; Returns:
+; 	- cx [bits 0-5]   : sector number
+;	- cx [bits 6-15]  : cylinder
+;	- dh 			  : head
+;======================
+lba_to_chs:
+										;Calculate Sector #
+	xor dx, dx							;  dx = 0
+	div word [bpb_sectors_per_track]	;  ax = LBA / SectorsPerTrack
+										;  dx = LBA % SectorsPerTrack
+	inc dx								;  dx = (LBA % SectorsPerTrack) + 1		(Sector #)
+	mov cx, dx							;  cx = dx								Store sector # in proper register
+	
+	xor dx, dx							;Calculate head and cylinder
+	div word [bpb_number_of_heads]		;  ax = (LBA / SPT) / HPC				(Cylinder #)
+										;  dx = (LBA / SPT) % HPC				(Head #)
+	
+	mov dh, dl							; dh = head
+	mov ch, al							; ch = cylinder (low 8 bits)
+	shl ah, 6
+	or cl, ah							; put upper two bits of cylinder in cl
+	
+	pop ax
+	mov dl, al 							; restor dl
+	pop ax
+	ret
+
+;======================
+; Description:
+;	- Reads sectors from a disk
+;	- Ref: https://en.wikipedia.org/wiki/INT_13H#INT_13h_AH=02h:_Read_Sectors_From_Drive
+; Params:
+;	- ax   : LBA address
+;	- cl   : number of sectors to read (128 max)
+; 	- dl   : drive number
+;	- es:bx: address to store read data
+; Returns:
+;	- N/A
+;	- Read data will reside at the address specified with es:bs
+;======================
+disk_read:
+	push ax
+	push bx
+	push cx								; save CL (number of sectors to read), cl is modified in 'lba_to_chs'
+	push dx
+	push di
+
+	call lba_to_chs						; convert LBA to CHS
+	pop ax								; al = # of sectors to read (was in cl)
+	mov ah, 02h
+	mov di, 3							; retry read count
+.retry:
+	pusha								; save registers
+	stc									; set carry flag intentionally
+	int 13h								; interupt 13h	(if the carry flag is set there was an error)
+	jnc .done
+	
+	; error reading
+	popa
+	call disk_reset
+	
+	dec di
+	test di, di
+	jnz .retry
+.fail:									; all 3 attempts to read failed 	
+	jmp floppy_error
+.done:
+	popa
+
+	pop di
+	pop dx
+	pop cx								; save CL (number of sectors to read), cl is modified in 'lba_to_chs'
+	pop bx
+	pop ax
+	ret
+
+;======================
+; Description:
+;   - Resets the disk controller
+; Params:
+;   - dl: drive number
+; Returns:
+;   - N/A
+;======================
+disk_reset:
+	pusha
+	mov ah, 0
+	stc
+	int 13h
+	jc floppy_error
+	popa
+	ret
 
 ;======================
 ; program data
 ;======================
 msg_hello: db 'Hello World!', 0dh, 0ah, 0
+msg_read_fail: db 'Read failed!', 0dh, 0ah, 0
 
 ;======================
 ; program padding (BIOS expects 55aa at the end of the first 512 bytes)
