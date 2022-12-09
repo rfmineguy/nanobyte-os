@@ -34,6 +34,7 @@ make_target_list:
 	@echo " + qemu_run         : Starts up qemu with the latest kernel image"
 	@echo " + floppy_image     : Builds the main image of the OS"
 	@echo " + docker_run	   : Starts a docker container in this directory"
+	@echo " + bochs_debug	   : Starts the bochs x86 emulator/debugger (ONLY AVAILABLE ON LINUX SYSTEMS, as of now)"
 
 # ============================================================
 # Build the main image os the OS
