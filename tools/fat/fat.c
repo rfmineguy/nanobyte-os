@@ -182,6 +182,7 @@ int main(int argc, char** argv) {
     fprintf(stdout, "Successfully read file, %s\n", argv[2]);
   }
   
+  // Print contents of the file
   for (size_t i = 0; i < entry->file_size_bytes; i++) {
     if (isprint(buffer[i])) {
       fputc(buffer[i], stdout);

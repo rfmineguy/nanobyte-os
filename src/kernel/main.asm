@@ -1,7 +1,7 @@
 ;=======================
 ; preinit
 ;=======================
-org 0x7c00				; beginning of the OS code (calculate all memory offsets based on address 7c00)
+org 0x0					; beginning of the OS code (calculate all memory offsets based on address 0, bootloader set this up)
 bits 16					; tell the assembler that it should emit 16 bit code (NOT 16 bit mode)
 
 ;======================
@@ -9,7 +9,17 @@ bits 16					; tell the assembler that it should emit 16 bit code (NOT 16 bit mod
 ;======================
 start:
 	jmp main
+; =============================
+; entry point
+; =============================
+main:
+	mov si, msg_hello
+	call puts
 
+.halt:					; backup infinite loop
+	cli
+	hlt					; halt the processor
+	
 ; =============================
 ; print a string to the screen
 ; params:
@@ -36,38 +46,12 @@ puts:
 	pop si				; restore used registers
 	ret
 
-; =============================
-; entry point
-; =============================
-main:
-	;======================
-	; setup data segments
-	;======================
-	mov ax, 0
-	mov ds, ax
-	mov es, ax
-	
-	;======================
-	; setup stack registers
-	;======================
-	mov ss, ax
-	mov sp, 0x7C00
-	
-	mov si, msg_hello
-	call puts
-
-	hlt					; halt the processor
-	
-.halt:					; backup infinite loop
-	jmp .halt			;   just in case hlt doesn't actually halt
-
 ;======================
 ; program data
 ;======================
-msg_hello: db 'Hello World!', 0dh, 0ah, 0
+msg_hello: db 'Hello world from kernel!', 0dh, 0ah, 0
 
 ;======================
 ; program padding
 ;======================
 times 510-($-$$) db 0 	; fill up rest of program with 0s
-dw 0aa55h				; magic constant for bios
