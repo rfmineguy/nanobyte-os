@@ -61,8 +61,8 @@ main:
 	push es
 	push word .after
 	retf
-.after:
 	
+.after:
 	;======================
 	; read from floppy disk
 	;======================
@@ -83,20 +83,20 @@ main:
 	jc floppy_error
 	pop es
 	
-	and cl, 0x3f
+	and cl, 0x3F						; remove top 2 bits
 	xor ch, ch
-	mov [bpb_sectors_per_track], cx
+	mov [bpb_sectors_per_track], cx		; save to memory (sectors_per_track)
 	
 	inc dh
-	mov [bpb_number_of_heads], dx
+	mov [bpb_number_of_heads], dx		; save to memory (number_of_heads)
 	
 	;======================
 	; calculate LBA of root directory
 	; LBA (root directory) = reserved + fat_count * sectors_per_fat	
 	;======================
 	mov ax, [bpb_sectors_per_fat]
-	xor bx, bx 							; bx = 0 (clear)
 	mov bl, [bpb_fat_count]
+	xor bh, bh
 	mul bx								; ax = (fat_count * sectors_per_fat)
 	add ax, [bpb_reserved_sectors]		; ax = reserved + (fat_count * sectors_per_fat)
 	push ax
@@ -112,7 +112,7 @@ main:
 	
 	test dx, dx						; if dx != 0 add 1
 	jz .root_dir_after				; if dx == 0 skip
-	inc dx							; add 1
+	inc ax							; add 1
 
 .root_dir_after:
 	;======================
@@ -189,14 +189,18 @@ main:
 	
 	or dx, dx
 	jz .even
+
 .odd:
 	shr ax, 4
 	jmp .next_cluster_after
+	
 .even:
 	and ax, 0x0fff
+
 .next_cluster_after:
-	cmp ax, 0x0ff8
-	jae .read_finish
+	cmp ax, 0x0FF8
+	jae .read_finish			; jmp if above or equal (unsigned?)
+
 	mov [kernel_cluster], ax
 	jmp .load_kernel_loop
 
@@ -216,32 +220,6 @@ main:
 ;======================
 ; end main
 ;======================
-
-; =============================
-; print a string to the screen
-; params:
-;	- ds:si : string pointer
-; =============================
-puts:
-	push si				; save used registers
-	push ax				;
-    push bx
-.loop:					; loop over each byte starting at si
-	lodsb				; load byte at ds:si into eax
-	or al, al			; set zf if we encounter the NULL(0x0) byte
-	jz .done			; we've found the null byte
-
-	mov ah, 0x0e		; enter teletype mode
-	mov bh, 0x0			; set page number
-	; mov al, al		; al has the byte to display
-	int 10h				; invoke system interrupt (print char to screen)
-	
-	jmp .loop			; continue looping over the "string"
-.done:
-    pop bx
-	pop ax				; restore used registers
-	pop si				; restore used registers
-	ret
 
 ;=============================
 ; When there is a floppy error this is called
@@ -266,11 +244,38 @@ wait_key_and_reboot:
 	mov ah, 0			; wait for user keypress
 	int 16h				; kernel call
 	jmp 0FFFFh:0		; jump up to the start of BIOS (effectively rebooting)
-	
+
+;=============================
+; Halt the CPU
+;=============================
 .halt:					; backup infinite loop
 	cli					; disable interupts
     hlt
-	;jmp .halt			;   just in case hlt doesn't actually halt
+
+; =============================
+; print a string to the screen
+; params:
+;	- ds:si : string pointer
+; =============================
+puts:
+	push si				; save used registers
+	push ax				;
+    push bx
+.loop:					; loop over each byte starting at si
+	lodsb				; load byte at ds:si into eax
+	or al, al			; set zf if we encounter the NULL(0x0) byte
+	jz .done			; we've found the null byte
+
+	mov ah, 0eh 		; enter teletype mode
+	mov bh, 0h			; set page number
+	int 10h				; invoke system interrupt (print char to screen)
+	
+	jmp .loop			; continue looping over the "string"
+.done:
+    pop bx
+	pop ax				; restore used registers
+	pop si				; restore used registers
+	ret
 
 ;======================
 ; Disk functions below
@@ -330,6 +335,7 @@ disk_read:
 	push dx
 	push di
 
+	push cx
 	call lba_to_chs						; convert LBA to CHS
 	pop ax								; al = # of sectors to read (was in cl)
 
@@ -381,8 +387,8 @@ disk_reset:
 ; program data
 ;======================
 msg_loading:			db 'Loading...', 0dh, 0ah, 0
-msg_read_fail: 			db 'Read from disk failed!', 0dh, 0ah, 0
-msg_kernel_not_found	db 'kernel.bin not found', 0dh, 0ah, 0
+msg_read_fail: 			db 'Disk read failed!', 0dh, 0ah, 0
+msg_kernel_not_found	db 'KERNEL.BIN not found', 0dh, 0ah, 0
 file_kernel_bin: 		db 'KERNEL  BIN'
 kernel_cluster:			dw 0
 

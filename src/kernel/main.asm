@@ -8,15 +8,10 @@ bits 16					; tell the assembler that it should emit 16 bit code (NOT 16 bit mod
 ; code
 ;======================
 start:
-	jmp main
-; =============================
-; entry point
-; =============================
-main:
 	mov si, msg_hello
 	call puts
 
-.halt:					; backup infinite loop
+.halt:
 	cli
 	hlt					; halt the processor
 	
@@ -49,9 +44,4 @@ puts:
 ;======================
 ; program data
 ;======================
-msg_hello: db 'Hello world from kernel!', 0dh, 0ah, 0
-
-;======================
-; program padding
-;======================
-times 510-($-$$) db 0 	; fill up rest of program with 0s
+msg_hello: db 'Hello world from KERNEL!', 0dh, 0ah, 0
