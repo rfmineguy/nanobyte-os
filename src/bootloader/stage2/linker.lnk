@@ -1,7 +1,5 @@
-# avoid reading default executable headers
-
 FORMAT RAW BIN
-OPTION QUIET
+OPTION QUIET,
 	NODEFAULTLIBS,
 	START=entry,
 	VERBOSE,
