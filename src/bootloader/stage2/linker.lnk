@@ -1,11 +1,11 @@
-FORMAT RAW BIN
-OPTION QUIET,
-	NODEFAULTLIBS,
-	START=entry,
-	VERBOSE,
-	OFFSET=0,
-	STACK=0x200
-ORDER
+format raw bin					# specify raw binary format
+OPTION QUIET,					#  quiet = no output other than warnings/errors
+	NODEFAULTLIBS,				#  nodefaultlibs = disable attempt to link a standard library 
+	START=entry,				#  start = specifies the label of the entry function
+	VERBOSE,					#  verbose = add extra info to map file
+	OFFSET=0,					#  offest = similar to the org directive (specifies where in memory the binary should be loaded) 
+	STACK=0x200					#  stack = size of stack
+ORDER							# specify the order segments get put into the binary
 	CLNAME CODE
 		SEGMENT _ENTRY
 		SEGMENT _TEXT

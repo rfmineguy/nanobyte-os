@@ -1,4 +1,3 @@
-#BUILD_DIR ?= build/
 BUILD_DIR := build/
 ASM ?= nasm
 ASMFLAGS ?=-f obj
@@ -15,10 +14,11 @@ OBJECTS_ASM := $(patsubst %.asm, $(BUILD_DIR)/stage2/asm/%.obj, $(SOURCES_ASM))
 
 all: stage2
 
-# Why not just run this whole process in the docker container?
+# Why not just run this whole process in the docker container? Well, why not?! Lol
 stage2: $(BUILD_DIR)/stage2.bin
 
 $(BUILD_DIR)/stage2.bin: $(OBJECTS_ASM) $(OBJECTS_C)
+# <cmd> NAME <outputfile> FILE <inputobjfile> OPTION MAP=<mapfile> @linker.lnk
 	$(LD16) NAME $(BUILD_DIR)/stage2.bin FILE \{ $(OBJECTS_ASM) $(OBJECTS_C) \} OPTION MAP=$(BUILD_DIR)/stage2.map @linker.lnk
 
 $(BUILD_DIR)/stage2/c/%.obj: %.c always
@@ -26,7 +26,7 @@ $(BUILD_DIR)/stage2/c/%.obj: %.c always
 	
 $(BUILD_DIR)/stage2/asm/%.obj: %.asm always
 	$(ASM) $(ASMFLAGS) -o $@ $<
-	
+
 always:
 	mkdir -p $(BUILD_DIR)/stage2/c
 	mkdir -p $(BUILD_DIR)/stage2/asm

@@ -1,3 +1,6 @@
+;
+; this file sets up the bootloader stage 2
+;
 bits 16
 
 section _ENTRY class=CODE
@@ -7,7 +10,7 @@ global entry
 
 entry:
     cli
-    ; setup stack
+    ; setup stack (stack and data segment in small memory model should be the same)
     mov ax, ds
     mov ss, ax
     mov sp, 0

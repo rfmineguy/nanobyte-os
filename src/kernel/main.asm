@@ -14,7 +14,7 @@ start:
 .halt:
 	cli
 	hlt					; halt the processor
-	
+
 ; =============================
 ; print a string to the screen
 ; params:
@@ -33,7 +33,7 @@ puts:
 	mov bh, 0x0			; set page number
 	mov al, al			; al has the byte to display
 	int 10h				; invoke system interrupt (print char to screen)
-	
+
 	jmp .loop			; continue looping over the "string"
 .done:
     pop bx

@@ -125,7 +125,7 @@ main:
 	call disk_read
 	
 	;======================
-	; search for kernel.bin
+	; search for kernel.bin in the fat
 	;======================
 	xor bx, bx
 	mov di, buffer
@@ -134,7 +134,7 @@ main:
 	mov si, file_kernel_bin			; file to search for
 	mov cx, 11						; max file length
 	push di
-	repe cmpsb						; continue comparing string bytes (research further)
+	repe cmpsb						; continue 'comparing string bytes' (research further, conditionally incremends di:si)
 	pop di
 	je .found_kernel
 	
@@ -158,9 +158,9 @@ main:
 	call disk_read
 	
 	; read kernel and process fat chain
-	mov bx, KERNEL_LOAD_SEGMENT
+	mov bx, KERNEL_LOAD_SEGMENT			;0x2000 (8192 decimal)
 	mov es, bx
-	mov bx, KERNEL_LOAD_OFFSET
+	mov bx, KERNEL_LOAD_OFFSET			;0x0
 
 .load_kernel_loop:
 	; Read next cluster
@@ -174,7 +174,7 @@ main:
 	mov dl, [ebr_drive_number]
 	call disk_read
 	
-	; this may cause overflow if the kernel is over 64kb
+	; this may cause overflow if the kernel is over 64kb (would corrupt data)
 	add bx, [bpb_bytes_per_sec]
 	
 	; compute location of next cluster
@@ -209,14 +209,13 @@ main:
 	mov ax, KERNEL_LOAD_SEGMENT
 	mov ds, ax
 	mov es, ax
-	jmp KERNEL_LOAD_SEGMENT:KERNEL_LOAD_OFFSET
+	jmp KERNEL_LOAD_SEGMENT:KERNEL_LOAD_OFFSET	;actually (far) jump to the kernel code
 	
 	; if this happens something is wrong
 	jmp wait_key_and_reboot
 	
 	cli
 	hlt
-
 ;======================
 ; end main
 ;======================
