@@ -1,2 +1,2 @@
-# Empty ReadMe
-+ Add something someday
+# Build Instructions
++ Use build.sh
