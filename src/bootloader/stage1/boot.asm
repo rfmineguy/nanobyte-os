@@ -388,8 +388,8 @@ disk_reset:
 ;======================
 msg_loading:			db 'Loading...', 0dh, 0ah, 0
 msg_read_fail: 			db 'Disk read failed!', 0dh, 0ah, 0
-msg_kernel_not_found	db 'KERNEL.BIN not found', 0dh, 0ah, 0
-file_kernel_bin: 		db 'KERNEL  BIN'
+msg_kernel_not_found	db 'STAGE2.BIN not found', 0dh, 0ah, 0
+file_kernel_bin: 		db 'STAGE2  BIN'
 kernel_cluster:			dw 0
 
 ; Used for loading the kernel into memory
