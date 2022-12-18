@@ -3,5 +3,6 @@
 
 void putc(char);
 void puts(const char*);
+void __cdecl printf(const char* fmt, ...);
 
 #endif

@@ -14,6 +14,11 @@
     2. all other data is saved by the calle
   + Name mangling
     1. C functions will be prepended with a '_'
+- Layout
+  ```
+  F01E   F020   F022   F024   F026   F028   F02a   F02c
+                reta   arg1   arg2
+  ```
 - Example
   ```c
   #include <stdint.h>
