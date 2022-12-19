@@ -11,7 +11,7 @@ jmp short start								; EB 3C 90		(just has to be there, i think so it knows wh
 nop
 
 bpb_oem: 		            db 'MSWIN4.1'	; OEM identifier, 8 bytes
-bpb_bytes_per_sec: 	        dw 512	        ; Number of bytes per sector (2 bytes)
+bpb_bytes_per_sec: 	        dw 512	        ; Number of bytes per sector (512 bytes)
 bpb_sectors_per_cluster:    db 1		    ;
 bpb_reserved_sectors:       dw 1
 bpb_fat_count:              db 2
@@ -131,7 +131,7 @@ main:
 	mov di, buffer
 
 .search_kernel:
-	mov si, file_kernel_bin			; file to search for
+	mov si, file_stage2_bin			; file to search for
 	mov cx, 11						; max file length
 	push di
 	repe cmpsb						; continue 'comparing string bytes' (research further, conditionally incremends di:si)
@@ -148,7 +148,7 @@ main:
 
 .found_kernel:
 	mov ax, [di + 26]			;first cluster number (offset 26 bytes)
-	mov [kernel_cluster], ax
+	mov [stage2_cluster], ax
 	
 	; load FAT from disk into memory
 	mov ax, [bpb_reserved_sectors]
@@ -164,11 +164,11 @@ main:
 
 .load_kernel_loop:
 	; Read next cluster
-	mov ax, [kernel_cluster]
+	mov ax, [stage2_cluster]
 	
 	; NOTE: hardcoded value, we should change this sometime
 	;  represents an offset into memory
-	add ax, 31					; first cluster = (kernel_cluster - 2) * sectors_per_cluster + start_sector
+	add ax, 31					; first cluster = (stage2_cluster - 2) * sectors_per_cluster + start_sector
 								; start_sector = reserved + fats + root_dir_size = 1 + 18 + 134
 	mov cl, 1
 	mov dl, [ebr_drive_number]
@@ -178,11 +178,12 @@ main:
 	add bx, [bpb_bytes_per_sec]
 	
 	; compute location of next cluster
-	mov ax, [kernel_cluster]
+	mov ax, [stage2_cluster]
 	mov cx, 3
 	mul cx
 	mov cx, 2
 	div cx						; ax = index of entry in FAT, dx = cluster % 2
+
 	mov si, buffer
 	add si, ax
 	mov ax, [ds:si]
@@ -201,7 +202,7 @@ main:
 	cmp ax, 0x0FF8
 	jae .read_finish			; jmp if above or equal (unsigned?)
 
-	mov [kernel_cluster], ax
+	mov [stage2_cluster], ax
 	jmp .load_kernel_loop
 
 .read_finish:
@@ -209,6 +210,7 @@ main:
 	mov ax, KERNEL_LOAD_SEGMENT
 	mov ds, ax
 	mov es, ax
+
 	jmp KERNEL_LOAD_SEGMENT:KERNEL_LOAD_OFFSET	;actually (far) jump to the kernel code
 	
 	; if this happens something is wrong
@@ -388,8 +390,8 @@ disk_reset:
 msg_loading:			db 'Loading...', 0dh, 0ah, 0
 msg_read_fail: 			db 'Disk read failed!', 0dh, 0ah, 0
 msg_kernel_not_found	db 'STAGE2.BIN not found', 0dh, 0ah, 0
-file_kernel_bin: 		db 'STAGE2  BIN'
-kernel_cluster:			dw 0
+file_stage2_bin: 		db 'STAGE2  BIN'
+stage2_cluster:			dw 0
 
 ; Used for loading the kernel into memory
 KERNEL_LOAD_SEGMENT		equ 0x2000
@@ -403,7 +405,7 @@ times 510-($-$$) db 0 	; fill up, up to the last two bytes, with 0s
 dw 0aa55h				; magic constant for bios
 
 ;======================
-; buffer to read kernel into
+; buffer to read kernel into (basically anything past the end of the bootsector)
 ;======================
 buffer:
 
